@@ -2,6 +2,7 @@ package com.houseofmoran.sensorplay;
 
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -18,8 +19,10 @@ public class MainActivity extends AppCompatActivity {
         Sensor mMagneticSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         Sensor mAccelSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+
         mListener = new NorthCrossingDeterminer(mSensorManager, mMagneticSensor, mAccelSensor,
-                new BuzzOnNorthCrossing());
+                new BuzzOnNorthCrossing(vibrator));
     }
 
     protected void onResume() {
