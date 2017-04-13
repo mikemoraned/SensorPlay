@@ -47,6 +47,9 @@ public class MainActivity extends AppCompatActivity {
         private float[] mLastAccel = null;
         private float[] mLastMagnetic = null;
 
+        private static final float UNSET_AZIMUTH = Float.MIN_VALUE;
+        private float mLastAzimuth = UNSET_AZIMUTH;
+
         @Override
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor == mAccelSensor) {
@@ -59,7 +62,23 @@ public class MainActivity extends AppCompatActivity {
             if (mLastAccel != null && mLastMagnetic != null) {
                 float azimuth = toAzimuth(mLastAccel, mLastMagnetic);
                 Log.i(this.getClass().getName(), String.format("azimuth: %f", azimuth));
+                if (mLastAzimuth != UNSET_AZIMUTH) {
+                    if (350.0f <= mLastAzimuth && mLastAzimuth < 360.0f) {
+                        if (0.0f < azimuth && azimuth <= 10.0f) {
+                            crossedNorth(mLastAzimuth, azimuth);
+                        }
+                    } else if (0.0f < mLastAzimuth && mLastAzimuth <= 10.0f) {
+                        if (350.0f <= azimuth && azimuth < 360.0f) {
+                            crossedNorth(mLastAzimuth, azimuth);
+                        }
+                    }
+                }
+                mLastAzimuth = azimuth;
             }
+        }
+
+        private void crossedNorth(float prev, float current) {
+            Log.i(this.getClass().getName(), String.format("crossed north: %f -> %f", prev, current));
         }
 
         private float toAzimuth(float[] accel, float[] magnetic) {
