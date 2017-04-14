@@ -10,6 +10,7 @@ class NorthCrossingDeterminer implements SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mMagneticSensor;
     private Sensor mAccelSensor;
+    private final AzimuthEstimateListener mAzimuthEstimateListener;
     private NorthCrossingListener mNorthCrossingListener;
 
     private float[] mLastAccel = null;
@@ -21,10 +22,12 @@ class NorthCrossingDeterminer implements SensorEventListener {
     public NorthCrossingDeterminer(SensorManager mSensorManager,
                                    Sensor mMagneticSensor,
                                    Sensor mAccelSensor,
+                                   AzimuthEstimateListener azimuthEstimateListener,
                                    NorthCrossingListener northCrossingListener) {
         this.mSensorManager = mSensorManager;
         this.mMagneticSensor = mMagneticSensor;
         this.mAccelSensor = mAccelSensor;
+        this.mAzimuthEstimateListener = azimuthEstimateListener;
         this.mNorthCrossingListener = northCrossingListener;
     }
 
@@ -39,6 +42,7 @@ class NorthCrossingDeterminer implements SensorEventListener {
         if (mLastAccel != null && mLastMagnetic != null) {
             float azimuth = toAzimuth(mLastAccel, mLastMagnetic);
             Log.i(this.getClass().getName(), String.format("azimuth: %f", azimuth));
+            this.mAzimuthEstimateListener.onEstimated(azimuth);
             if (mLastAzimuth != UNSET_AZIMUTH) {
                 if (350.0f <= mLastAzimuth && mLastAzimuth < 360.0f) {
                     if (0.0f < azimuth && azimuth <= 10.0f) {
