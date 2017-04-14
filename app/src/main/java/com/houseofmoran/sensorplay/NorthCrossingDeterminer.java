@@ -4,6 +4,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.provider.Settings;
 import android.util.Log;
 
 class NorthCrossingDeterminer implements SensorEventListener {
@@ -14,10 +15,13 @@ class NorthCrossingDeterminer implements SensorEventListener {
     private NorthCrossingListener mNorthCrossingListener;
 
     private float[] mLastAccel = null;
+    private long mLastAccelSampleTime;
     private float[] mLastMagnetic = null;
+    private long mLastMagneticSampleTime;
 
     private static final float UNSET_AZIMUTH = Float.MIN_VALUE;
     private float mLastAzimuth = UNSET_AZIMUTH;
+
 
     public NorthCrossingDeterminer(SensorManager mSensorManager,
                                    Sensor mMagneticSensor,
@@ -35,26 +39,34 @@ class NorthCrossingDeterminer implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor == mAccelSensor) {
             mLastAccel = copyArray(event.values);
+            mLastAccelSampleTime = System.currentTimeMillis();
         } else if (event.sensor == mMagneticSensor) {
             mLastMagnetic = copyArray(event.values);
+            mLastMagneticSampleTime = System.currentTimeMillis();
         }
 
-        if (mLastAccel != null && mLastMagnetic != null) {
+        if (mLastAccel != null && mLastMagnetic != null
+                && (Math.abs(mLastAccelSampleTime - mLastMagneticSampleTime) < 100)) {
             float azimuth = toAzimuth(mLastAccel, mLastMagnetic);
             Log.i(this.getClass().getName(), String.format("azimuth: %f", azimuth));
             this.mAzimuthEstimateListener.onEstimated(azimuth);
-            if (mLastAzimuth != UNSET_AZIMUTH) {
-                if (350.0f <= mLastAzimuth && mLastAzimuth < 360.0f) {
-                    if (0.0f < azimuth && azimuth <= 10.0f) {
-                        this.mNorthCrossingListener.onNorthCrossed(mLastAzimuth, azimuth);
-                    }
-                } else if (0.0f < mLastAzimuth && mLastAzimuth <= 10.0f) {
-                    if (350.0f <= azimuth && azimuth < 360.0f) {
-                        this.mNorthCrossingListener.onNorthCrossed(mLastAzimuth, azimuth);
-                    }
+
+            notifyOnCrossingNorth(mLastAzimuth, azimuth);
+            mLastAzimuth = azimuth;
+        }
+    }
+
+    private void notifyOnCrossingNorth(float previous, float latest) {
+        if (previous != UNSET_AZIMUTH) {
+            if (350.0f <= previous && previous < 360.0f) {
+                if (0.0f < latest && latest <= 10.0f) {
+                    this.mNorthCrossingListener.onNorthCrossed(previous, latest);
+                }
+            } else if (0.0f < previous && previous <= 10.0f) {
+                if (350.0f <= latest && latest < 360.0f) {
+                    this.mNorthCrossingListener.onNorthCrossed(previous, latest);
                 }
             }
-            mLastAzimuth = azimuth;
         }
     }
 
@@ -80,7 +92,7 @@ class NorthCrossingDeterminer implements SensorEventListener {
     }
 
     public void startListening() {
-        int samplingPeriodUs = 1000 * 1000;
+        int samplingPeriodUs = 1000 * 100;
         mSensorManager.registerListener(this, mMagneticSensor, samplingPeriodUs);
         mSensorManager.registerListener(this, mAccelSensor, samplingPeriodUs);
     }
