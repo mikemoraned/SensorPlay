@@ -57,11 +57,20 @@ class NorthCrossingDeterminer implements SensorEventListener {
             }
             else {
                 long elapsed = azimuthChangeTime - mLastAzimuthChangeTime;
-                float wantedChange = azimuth - mLastAzimuth;
                 float allowedChangeSize = elapsed * MAX_AZIMUTH_CHANGE_PER_MILLI;
+
+                float wantedChange = ((azimuth - mLastAzimuth) + 360) % 360;
+                if (wantedChange > 180) {
+                    wantedChange = wantedChange - 360;
+                }
+
                 float clampedAzimuthChange =
                         Math.signum(wantedChange) * Math.min(Math.abs(wantedChange), allowedChangeSize);
                 float clampedAzimuth = mLastAzimuth + clampedAzimuthChange;
+
+                Log.i(this.getClass().getName(),
+                        String.format("a: %f, w: %f, c: %f, c: %f",
+                                allowedChangeSize, wantedChange, clampedAzimuthChange, clampedAzimuth));
 
                 Log.i(this.getClass().getName(),
                         String.format("azimuth: raw: %f, clamped: %f", azimuth, clampedAzimuth));
