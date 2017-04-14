@@ -9,7 +9,8 @@ import android.view.View;
 class AzimuthEstimateView extends View implements AzimuthEstimateListener {
 
     private static final float UNSET_AZIMUTH = Float.MIN_VALUE;
-    private float mLastAzimuth = UNSET_AZIMUTH;
+    private float mLastRawAzimuth = UNSET_AZIMUTH;
+    private float mLastSmoothedAzimuth = UNSET_AZIMUTH;
 
     public AzimuthEstimateView(Context context) {
         super(context);
@@ -18,7 +19,7 @@ class AzimuthEstimateView extends View implements AzimuthEstimateListener {
     @Override
     protected void onDraw(Canvas canvas) {
 
-        if (mLastAzimuth != UNSET_AZIMUTH) {
+        if (mLastRawAzimuth != UNSET_AZIMUTH && mLastSmoothedAzimuth != UNSET_AZIMUTH) {
 
             Paint paint = new Paint();
             paint.setStrokeWidth(10);
@@ -35,11 +36,14 @@ class AzimuthEstimateView extends View implements AzimuthEstimateListener {
                     widthOffset + minExtent, heightOffset + minExtent,
                     paint);
 
-            paint.setColor(Color.GREEN);
+            paint.setColor(Color.RED);
             drawAngleIndicator(northAtTop(0.0), canvas, paint, minExtent, heightOffset, widthOffset);
 
             paint.setColor(Color.BLUE);
-            drawAngleIndicator(northAtTop(mLastAzimuth), canvas, paint, minExtent, heightOffset, widthOffset);
+            drawAngleIndicator(northAtTop(mLastRawAzimuth), canvas, paint, minExtent, heightOffset, widthOffset);
+
+            paint.setColor(Color.GREEN);
+            drawAngleIndicator(northAtTop(mLastSmoothedAzimuth), canvas, paint, minExtent, heightOffset, widthOffset);
         }
     }
 
@@ -63,8 +67,9 @@ class AzimuthEstimateView extends View implements AzimuthEstimateListener {
     }
 
     @Override
-    public void onEstimated(float azimuth) {
-        mLastAzimuth = azimuth;
+    public void onEstimated(float rawAzimuth, float smoothedAzimuth) {
+        mLastRawAzimuth = rawAzimuth;
+        mLastSmoothedAzimuth = smoothedAzimuth;
         invalidate();
     }
 }

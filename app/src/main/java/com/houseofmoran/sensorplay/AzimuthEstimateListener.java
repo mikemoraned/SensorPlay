@@ -2,5 +2,5 @@ package com.houseofmoran.sensorplay;
 
 interface AzimuthEstimateListener {
 
-    void onEstimated(float azimuth);
+    void onEstimated(float rawAzimuth, float smoothedAzimuth);
 }

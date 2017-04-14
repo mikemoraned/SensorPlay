@@ -22,6 +22,8 @@ class NorthCrossingDeterminer implements SensorEventListener {
     private static final float UNSET_AZIMUTH = Float.MIN_VALUE;
     private float mLastAzimuth = UNSET_AZIMUTH;
 
+    private float MAX_AZIMUTH_CHANGE_PER_MILLI = 1.0f / 2000.0f;
+    private long mLastAzimuthChangeTime;
 
     public NorthCrossingDeterminer(SensorManager mSensorManager,
                                    Sensor mMagneticSensor,
@@ -48,11 +50,28 @@ class NorthCrossingDeterminer implements SensorEventListener {
         if (mLastAccel != null && mLastMagnetic != null
                 && (Math.abs(mLastAccelSampleTime - mLastMagneticSampleTime) < 100)) {
             float azimuth = toAzimuth(mLastAccel, mLastMagnetic);
-            Log.i(this.getClass().getName(), String.format("azimuth: %f", azimuth));
-            this.mAzimuthEstimateListener.onEstimated(azimuth);
+            long azimuthChangeTime = Math.max(mLastAccelSampleTime, mLastMagneticSampleTime);
 
-            notifyOnCrossingNorth(mLastAzimuth, azimuth);
-            mLastAzimuth = azimuth;
+            if (mLastAzimuth == UNSET_AZIMUTH) {
+                mLastAzimuth = azimuth;
+            }
+            else {
+                long elapsed = azimuthChangeTime - mLastAzimuthChangeTime;
+                float wantedChange = azimuth - mLastAzimuth;
+                float allowedChangeSize = elapsed * MAX_AZIMUTH_CHANGE_PER_MILLI;
+                float clampedAzimuthChange =
+                        Math.signum(wantedChange) * Math.min(Math.abs(wantedChange), allowedChangeSize);
+                float clampedAzimuth = mLastAzimuth + clampedAzimuthChange;
+
+                Log.i(this.getClass().getName(),
+                        String.format("azimuth: raw: %f, clamped: %f", azimuth, clampedAzimuth));
+                this.mAzimuthEstimateListener.onEstimated(azimuth, clampedAzimuth);
+
+                notifyOnCrossingNorth(mLastAzimuth, clampedAzimuth);
+                mLastAzimuth = clampedAzimuth;
+            }
+
+            mLastAzimuthChangeTime = azimuthChangeTime;
         }
     }
 
