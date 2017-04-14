@@ -1,10 +1,16 @@
 package com.houseofmoran.sensorplay;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.LinearLayout;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -13,7 +19,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        AzimuthEstimateView azimuthEstimateView = new AzimuthEstimateView(this);
+        setContentView(azimuthEstimateView);
 
         SensorManager mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor mMagneticSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -22,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
         mListener = new NorthCrossingDeterminer(mSensorManager, mMagneticSensor, mAccelSensor,
-                new BuzzOnNorthCrossing(vibrator));
+                azimuthEstimateView, new BuzzOnNorthCrossing(vibrator));
     }
 
     protected void onResume() {
@@ -34,5 +42,4 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         mListener.stopListening();
     }
-
 }
